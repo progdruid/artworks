@@ -87,13 +87,13 @@ float line (vec2 st, vec2 v1, vec2 v2, float size) {
 
 
 const float edge = 0.02;
-const float noise_area = 0.015;
+const float noise_area = 0.024;
 const float noise_scale = 60.;
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     st.x *= u_resolution.x/u_resolution.y;
     
-    float line = line(st, vec2(0.220,0.360), vec2(0.840,0.520), 0.072);
+    float line = line(st, vec2(0.240,0.500), vec2(0.9,0.9), 0.072);
     float noise = snoise(vec2(100.) + st * noise_scale) * noise_area;
     line += noise;
     vec3 outcolor = mix(vec3(1.), vec3(0.), smoothstep(0.7 - edge, 0.7 + edge, line));
