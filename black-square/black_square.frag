@@ -9,6 +9,8 @@ precision mediump float;
 
 uniform vec2 u_resolution;
 
+const float seed = 100.;
+
 const float edge = 0.02;
 const float noise_area = 0.024;
 const float noise_scale = 60.;
@@ -122,11 +124,12 @@ void main() {
     float rightline = line(st, vec2(v2.x, v1.y), v2, line_size);
     float upline = line (st, vec2(v1.x, v2.y), v2, line_size);
     float downline = line (st, v1, vec2(v2.x, v1.y), line_size);
-    float noise = simplex(vec2(100.) + st * noise_scale) * noise_area;
+    float noise = simplex(vec2(seed) + st * noise_scale) * noise_area;
     
     float res = max(max(max(leftline, rightline), max(downline, upline)), square);
     res += noise;
-    vec3 color = vec3(color_amp * (fractal_noise(st*color_scale) + 1.)/2.);
+    
+    vec3 color = vec3(color_amp * (fractal_noise(vec2(seed) + st*color_scale) + 1.)/2.);
     vec3 outcolor = mix(vec3(1.), color, smoothstep(0.7 - edge, 0.7 + edge, res));
     
     gl_FragColor = vec4(outcolor,1.0);
