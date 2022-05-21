@@ -1,19 +1,28 @@
-// Author: Progdrud(@progdruid - twitter/github)
-// Title: Untitled yet
+// Author: Zack Kosovych - Progdruid(twitter/github: @progdruid)
+// Title: Kosovych's black sqaure
+
+#version 100
 
 #ifdef GL_ES
-precision highp float;
+precision mediump float;
 #endif
 
 uniform vec2 u_resolution;
-uniform vec2 u_mouse;
-uniform float u_time;
+
+const float edge = 0.02;
+const float noise_area = 0.024;
+const float noise_scale = 60.;
+const float line_size = 0.072;
+const vec2 v1 = vec2 (0.2);
+const vec2 v2 = vec2 (0.8);
+const float color_amp = 0.130;
+const float color_scale = 10.;
 
 //Simplex noise I took from web
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-float snoise(vec2 v) {
+float simplex(vec2 v) {
     const vec4 C = vec4(0.211324865405187,
                         0.366025403784439,
                         -0.577350269189626,
@@ -54,6 +63,17 @@ float snoise(vec2 v) {
     return 130.0 * dot(m, g);
 }
 
+float fractal_noise(vec2 st){
+    float value = simplex(st)/2.;
+    value += simplex(st*2.)/4.;
+    value += simplex(st*4.)/8.;
+    value += simplex(st*8.)/16.;
+    value += simplex(st*16.)/32.;
+    //value += simplex(st*32.)/64.;
+    //value += simplex(st*64.)/128.;
+    return value;
+}
+
 float line (vec2 st, vec2 v1, vec2 v2, float size) {
     float k1 = (v2.y - v1.y) / (v2.x - v1.x);
     if (v2.x == v1.x)
@@ -85,18 +105,29 @@ float line (vec2 st, vec2 v1, vec2 v2, float size) {
     return res;
 }
 
+float square (vec2 st, vec2 v1, vec2 v2) {
+    float left = step(v1.x, st.x);
+    float right = 1.- step (v2.x, st.x);
+    float up = 1. - step (v2.y, st.y);
+    float down = step (v1.y, st.y);
+    return left * right * up * down;
+}
 
-const float edge = 0.02;
-const float noise_area = 0.024;
-const float noise_scale = 60.;
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution.xy;
     st.x *= u_resolution.x/u_resolution.y;
     
-    float line = line(st, vec2(0.240,0.500), vec2(0.9,0.9), 0.072);
-    float noise = snoise(vec2(100.) + st * noise_scale) * noise_area;
-    line += noise;
-    vec3 outcolor = mix(vec3(1.), vec3(0.), smoothstep(0.7 - edge, 0.7 + edge, line));
+    float square = square(st, v1, v2);
+    float leftline = line(st, v1, vec2(v1.x,v2.y), line_size);
+    float rightline = line(st, vec2(v2.x, v1.y), v2, line_size);
+    float upline = line (st, vec2(v1.x, v2.y), v2, line_size);
+    float downline = line (st, v1, vec2(v2.x, v1.y), line_size);
+    float noise = simplex(vec2(100.) + st * noise_scale) * noise_area;
+    
+    float res = max(max(max(leftline, rightline), max(downline, upline)), square);
+    res += noise;
+    vec3 color = vec3(color_amp * (fractal_noise(st*color_scale) + 1.)/2.);
+    vec3 outcolor = mix(vec3(1.), color, smoothstep(0.7 - edge, 0.7 + edge, res));
     
     gl_FragColor = vec4(outcolor,1.0);
 }
